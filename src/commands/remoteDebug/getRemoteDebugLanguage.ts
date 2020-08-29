@@ -11,7 +11,7 @@ import { getWorkspaceSetting } from '../../vsCodeConfig/settings';
 export function getRemoteDebugLanguage(siteConfig: SiteConfigResource, context: IActionContext): RemoteDebugLanguage {
     // We read siteConfig.linuxFxVersion to find the image version:
     //   If the app is running Windows, it will be empty
-    //   If the app is running a blessed Linux image, it will contain the language and version, e.g. "NODE|8.11"
+    //   If the app is running a blessed Linux image, it will contain the language and version, e.g. "NODE|8.11" or "DOTNETCORE|3.1"
     //   If the app is running a custom Docker image, it will contain the Docker registry information, e.g. "DOCKER|repo.azurecr.io/image:tag"
 
     const enablePythonRemoteDebugging = getWorkspaceSetting<boolean>('enablePythonRemoteDebugging');
@@ -38,6 +38,15 @@ export function getRemoteDebugLanguage(siteConfig: SiteConfigResource, context: 
 
         if (enablePythonRemoteDebugging && version.startsWith('python')) {
             return RemoteDebugLanguage.Python;
+        }
+
+        if (version.startsWith('dotnet')) {
+            const splitVersion = version.split('|');
+            if (splitVersion.length > 1 && isNodeVersionSupported(splitVersion[1])) {
+                return RemoteDebugLanguage.CSharp;
+            } else {
+                throw new Error('Azure Remote Debugging is currently only supported for Node.js version >= 8.11 on Linux.');
+            }
         }
     }
 
